@@ -8,7 +8,7 @@ the model correctly predicts the direction of change (up or down).
 
 import numpy as np
 from darts import TimeSeries
-from typing import Union
+from typing import Union, Sequence
 
 
 def directional_accuracy(
@@ -71,7 +71,14 @@ def directional_accuracy(
     ...     reduction=np.mean
     ... )
     """
-    from darts.metrics.metrics import _get_values_or_raise
+    # Handle SeriesGenerator objects from backtest
+    # Convert to TimeSeries if needed
+    if hasattr(actual_series, '__iter__') and not isinstance(actual_series, TimeSeries):
+        # This is a SeriesGenerator or similar iterable
+        actual_series = list(actual_series)
+    if hasattr(pred_series, '__iter__') and not isinstance(pred_series, TimeSeries):
+        # This is a SeriesGenerator or similar iterable
+        pred_series = list(pred_series)
     
     # Handle sequences of TimeSeries (for multiple series or stochastic predictions)
     if isinstance(actual_series, list):
@@ -86,6 +93,7 @@ def directional_accuracy(
         return float(np.mean(accuracies))
     
     # Get numpy arrays from TimeSeries
+    from darts.metrics.metrics import _get_values_or_raise
     y_true, y_pred = _get_values_or_raise(actual_series, pred_series, intersect)
     
     # Need at least 2 points to calculate direction
@@ -143,7 +151,11 @@ def directional_accuracy_with_tolerance(
     - Directions are: UP (+1), FLAT (0), DOWN (-1)
     - A prediction is correct if it matches the actual direction exactly
     """
-    from darts.metrics.metrics import _get_values_or_raise
+    # Handle SeriesGenerator objects from backtest
+    if hasattr(actual_series, '__iter__') and not isinstance(actual_series, TimeSeries):
+        actual_series = list(actual_series)
+    if hasattr(pred_series, '__iter__') and not isinstance(pred_series, TimeSeries):
+        pred_series = list(pred_series)
     
     # Handle sequences
     if isinstance(actual_series, list):
@@ -157,6 +169,7 @@ def directional_accuracy_with_tolerance(
         return float(np.mean(accuracies))
     
     # Get numpy arrays
+    from darts.metrics.metrics import _get_values_or_raise
     y_true, y_pred = _get_values_or_raise(actual_series, pred_series, intersect)
     
     if len(y_true) < 2:
